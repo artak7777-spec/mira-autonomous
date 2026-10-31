@@ -1,0 +1,31 @@
+name: Daily autonomous note
+
+on:
+  schedule:
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  note:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Write daily note
+        run: |
+          DATE=$(date -u +%F)
+          mkdir -p notes
+          if [ ! -f "notes/$DATE.md" ]; then
+            printf "# %s\n\n## Done\n- \n\n## Next\n- \n" "$DATE" > "notes/$DATE.md"
+          else
+            printf "\n## Check-in %s UTC\n- " "$(date -u +%H:%M)" >> "notes/$DATE.md"
+          fi
+      - name: Commit
+        run: |
+          git config user.name "Mira Agent"
+          git config user.email "mira@users.noreply.github.com"
+          git add -A
+          git diff --staged --quiet || git commit -m "chore: daily note $(date -u +%F)"
+          git push
